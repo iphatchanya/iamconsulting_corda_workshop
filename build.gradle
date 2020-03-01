@@ -1,0 +1,107 @@
+allprojects {
+    repositories {
+        mavenLocal()
+        jcenter()
+        mavenCentral()
+        maven { url 'https://dl.bintray.com/kotlin/exposed' }
+        maven { url 'https://jitpack.io' }
+        maven { url 'https://ci-artifactory.corda.r3cev.com/artifactory/corda-releases' }
+        maven { url 'https://ci-artifactory.corda.r3cev.com/artifactory/corda' }
+    }
+
+    configurations.all {
+        resolutionStrategy {
+            // Force dependencies to use the same version of Kotlin
+            force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+            force "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
+        }
+    }
+}
+
+apply plugin: 'kotlin'
+apply plugin: 'net.corda.plugins.cordapp'
+apply plugin: 'net.corda.plugins.cordformation'
+apply plugin: 'net.corda.plugins.quasar-utils'
+
+
+apply plugin: 'kotlin'
+apply plugin: 'eclipse'
+apply plugin: 'net.corda.plugins.cordapp'
+apply plugin: 'net.corda.plugins.cordformation'
+
+buildscript {
+//    Properties constants = new Properties()
+//    file("$projectDir/constants.properties").withInputStream { constants.load(it) }
+    ext {
+        corda_release_group = 'net.corda'
+        corda_release_version = '4.1'
+        corda_gradle_plugins_version = '4.0.42'
+        kotlin_version = '1.2.71'
+        junit_version = '4.12'
+        quasar_version = '0.7.10'
+        log4j_version = '2.11.2'
+        slf4j_version = '1.7.25'
+        corda_platform_version = '4'
+    }
+
+
+    repositories {
+        mavenCentral()
+        jcenter()
+        maven {
+            url 'https://ci-artifactory.corda.r3cev.com/artifactory/corda-releases'
+        }
+        mavenLocal()
+    }
+
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath "net.corda.plugins:cordapp:$corda_gradle_plugins_version"
+        classpath "net.corda.plugins:cordformation:$corda_gradle_plugins_version"
+        classpath "net.corda.plugins:quasar-utils:$corda_gradle_plugins_version"
+    }
+}
+
+dependencies {
+    cordapp project(":workflows-kotlin")
+    cordapp project(":contracts-kotlin")
+}
+
+allprojects {
+    apply plugin: 'kotlin'
+
+    repositories {
+        mavenLocal()
+        jcenter()
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+        maven { url 'https://ci-artifactory.corda.r3cev.com/artifactory/corda' }
+    }
+
+    configurations {
+        compile {
+            // We want to use SLF4J's version of these bindings: jcl-over-slf4j
+            // Remove any transitive dependency on Apache's version.
+            exclude group: 'commons-logging', module: 'commons-logging'
+        }
+    }
+
+    tasks.withType(JavaCompile) {
+        options.compilerArgs << "-parameters" // Required for shell commands.
+    }
+
+    jar {
+        // CorDapps do not configure a Node's logging.
+        exclude '**/log4j2*.xml'
+    }
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile) {
+    kotlinOptions {
+        languageVersion = "1.2"
+        apiVersion = "1.2"
+        jvmTarget = "1.8"
+        javaParameters = true // Useful for reflection.
+    }
+}
+
